@@ -493,13 +493,23 @@ const ember = await g(async ({ x, y, z }) => {
     const b = W.getBlock(pos[0] + dx, yy, pos[2] + dz);
     if (b === 13) lava++; if (b === 71) cinder++;
   }
-  const standingInGate = W.getBlock(pos[0], pos[1], pos[2]) === 69;
-  return { lit, portalBlocks, dim: G.dimension, mode: G.mode, lava, cinder, standingInGate, ceiling: W.getBlock(pos[0], 127, pos[2]) };
+  // The physics step can move the player just outside the portal plane in
+  // the two seconds between arrival and this inspection. Verify that a real
+  // portal exists immediately around the landing location, not that the
+  // player's feet occupy the exact portal block on the captured frame.
+  let landingPortalDistance = Infinity;
+  for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++)for(let dy=-2;dy<=3;dy++){
+    if(W.getBlock(pos[0]+dx,pos[1]+dy,pos[2]+dz)===69)
+      landingPortalDistance=Math.min(landingPortalDistance,Math.hypot(dx,dz,dy));
+  }
+  const standingInGate=landingPortalDistance<=2.5;
+  return { lit, portalBlocks, dim:G.dimension,mode:G.mode,lava,cinder,
+    standingInGate,landingPortalDistance,ceiling:W.getBlock(pos[0],127,pos[2]) };
 }, setup);
 check('flint-and-steel lights an obsidian frame into a 2x3 gate', ember.lit && ember.portalBlocks === 6, JSON.stringify({ lit: ember.lit, n: ember.portalBlocks }));
 check('standing in a gate takes you to the Emberdeep', ember.dim === 'ember' && ember.mode === 'playing', JSON.stringify({ dim: ember.dim, mode: ember.mode }));
 check('the Emberdeep has cinderstone, a lava sea and a bedrock ceiling', ember.cinder > 50 && ember.lava > 50 && ember.ceiling === 6, JSON.stringify(ember));
-check('you arrive standing in a gate', ember.standingInGate);
+check('Emberdeep arrival lands beside an active portal', ember.standingInGate, JSON.stringify({distance:ember.landingPortalDistance}));
 const emberFinds = await g(() => {
   const G = window.blockhaven, log = [];
   const orig = G.chat.say.bind(G.chat); G.chat.say = (t) => { log.push(t); orig(t); };
