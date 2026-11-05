@@ -1436,7 +1436,10 @@ await wait(300);
     out.barrel = document.querySelector('#container.show h3.with-sort')?.textContent?.startsWith('Barrel') ?? false;
     G.containers.close(); await sleep(100);
     w.setBlock(x + 4, y, z - 3, B.composter);
-    for (let i = 0; i < 40 && w.getMeta(x + 4, y, z - 3) < 7; i++) await useOn(x + 4, y, z - 3, { id: It.seeds, count: 64 });
+    // Bread is an actual high-yield compostable (85%). Repeated real right-clicks
+    // test the chance-driven layer progression without mutating block metadata.
+    // Seeds are only 30% and make a long shared E2E suite unnecessarily flaky.
+    for (let i = 0; i < 40 && w.getMeta(x + 4, y, z - 3) < 7; i++) await useOn(x + 4, y, z - 3, { id: It.bread, count: 64 });
     await sleep(1300);
     out.composterReady = w.getMeta(x + 4, y, z - 3) === 8;
     await useOn(x + 4, y, z - 3, null);
