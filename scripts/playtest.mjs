@@ -244,11 +244,24 @@ const fished = await g(async ({ x, y, z }) => {
   const biting = b ? b.biteTicks > 0 : false;
   const itemsNear = () => G.entities.list.filter((e) => e.stack && Math.hypot(e.body.pos[0] - p.body.pos[0], e.body.pos[2] - p.body.pos[2]) < 16).length;
   const nearBefore = itemsNear();
-  G.use();
-  await sleep(2500);
-  // The catch flies toward you; count it whether it has been picked up or is still on its way.
+  // A catch may merge with an existing stack and disappear from nearby
+  // entities within 2.5s. Observe the *real loot creation event* to verify
+  // that reeling emitted something, instead of relying on slot-count deltas.
+  const prevDrop = G.entities.dropItem;
+  let emitted = 0;
+  G.entities.dropItem = function (...args) {
+    if (b && Math.hypot(args[0] - b.body.pos[0], args[2] - b.body.pos[2]) < 2) emitted++;
+    return prevDrop.apply(this, args);
+  };
+  try {
+    G.use();
+    await sleep(2500);
+  } finally {
+    G.entities.dropItem = prevDrop;
+  }
   const after = p.inv.count(291) + p.inv.slots.filter((s) => s && s.id !== 291 && s.id !== 290 && s.id !== 283 && s.id !== 284 && s.id !== 285).length;
-  return { state, biting, caught: after - before + Math.max(0, itemsNear() - nearBefore) };
+  return { state, biting, lootSpawned: emitted, bobberReeled: !G.bobber,
+    caught: Math.max(emitted, after - before + Math.max(0, itemsNear() - nearBefore)) };
 }, setup);
 check('fishing: bobber floats, bites, and reeling in catches something', fished.state === 'floating' && fished.biting && fished.caught >= 1, JSON.stringify(fished));
 
