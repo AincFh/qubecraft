@@ -105,13 +105,34 @@ await p.touchscreen.tap(slotBox.x + slotBox.width / 2, slotBox.y + slotBox.heigh
 await wait(200);
 check('tapping a hotbar slot selects it', await g(() => window.blockhaven.player.selected === 3));
 
-// Use: place the dirt back.
-await g(() => { const pl = window.blockhaven.player; pl.selected = pl.inv.slots.findIndex((s) => s && s.id === 3); pl.pitch = -0.9; });
-await wait(300);
-const place = await g(() => { const t = window.blockhaven.target; return t ? [t.pos[0] + t.normal[0], t.pos[1] + t.normal[1], t.pos[2] + t.normal[2]] : null; });
-await tapHold('[data-a=use]', 120);
-await wait(300);
-check('tapping Use places a block', await g((q) => q && window.blockhaven.world.getBlock(q[0], q[1], q[2]) === 3, place), JSON.stringify(place));
+// Use: actual touch placement (not direct G.use / world.setBlock).
+// The camera/ground selection can change as the physics body settles after
+// mining; re-aim and observe the current target before each real button tap.
+let placed=false;
+const useAttempts=[];
+for(let attempt=0;attempt<3&&!placed;attempt++){
+  await g(() => {
+    const G=window.blockhaven,p=G.player;
+    const dirtSlot=p.inv.slots.findIndex(s=>s?.id===3);
+    if(dirtSlot>=0)p.selected=dirtSlot;
+    p.body.vel=[0,0,0];p.pitch=-0.93;
+  });
+  await wait(400);
+  const plan=await g(() => {
+    const G=window.blockhaven,t=G.target,p=G.player;
+    const at=t?[t.pos[0]+t.normal[0],t.pos[1]+t.normal[1],t.pos[2]+t.normal[2]]:null;
+    return {at,controlling:G.input.controlling,held:p.held?.id??null,selected:p.selected,target:t?.pos??null};
+  });
+  await tapHold('[data-a=use]',240);
+  await wait(450);
+  const observed=await g((q)=>{
+    const G=window.blockhaven;
+    return {placed:!!q&&G.world.getBlock(q[0],q[1],q[2])===3,remaining:G.player.inv.count(3),cooldown:G.actions.useCooldown,selected:G.player.selected};
+  },plan.at);
+  placed=observed.placed;
+  useAttempts.push({plan,observed});
+}
+check('tapping Use places a block',placed,JSON.stringify(useAttempts));
 
 // Jump.
 const y0 = await g(() => window.blockhaven.player.body.pos[1]);
