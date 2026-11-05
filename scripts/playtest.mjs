@@ -520,6 +520,39 @@ const back = await g(async () => {
 });
 check('you can return to the overworld', back.dim === 'overworld' && back.mode === 'playing', JSON.stringify(back));
 
+// The dimension/combat smoke above is deliberately destructive: hostile mobs,
+// fire, fall damage and portal travel may leave a dead player in the SAME game
+// context. All subsequent inventory/potion/controls tests require a live player.
+// Restore through the game's actual death-screen respawn action instead of
+// mutating player.alive and accidentally hiding a broken respawn implementation.
+const recovered = await g(async () => {
+  const G = window.blockhaven;
+  for (const mob of G.entities.mobs()) mob.dead = true;
+  if (!G.player.alive) {
+    G.menus.show('death');
+    const button = document.querySelector('#death .btn.primary');
+    if (!button) return { ok: false, error: 'respawn button missing' };
+    button.click();
+    await new Promise(resolve => setTimeout(resolve, 650));
+  }
+  // Keep the rest of the independent gameplay tests from inheriting
+  // lingering fire/poison/hunger/knockback effects from combat.
+  if (!G.player.alive) return { ok: false, error: 'respawn did not revive player' };
+  G.player.health = 20;
+  G.player.food = 20;
+  G.player.burning = 0;
+  G.player.invulnerable = 0;
+  G.player.body.vel = [0,0,0];
+  G.player.effects.clear();
+  G.menus.show(null);
+  return { ok: G.player.alive, health: G.player.health,
+    dimension: G.dimension, menu: G.menus.current };
+});
+check('survival playtest recovers a live player after portal/combat scenarios',
+      recovered.ok && recovered.health===20 && recovered.menu===null,
+      JSON.stringify(recovered));
+
+
 // --- Crafting through the inventory screen.
 const crafted = await g(async () => {
   const G = window.blockhaven, p = G.player;
