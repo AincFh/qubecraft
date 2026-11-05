@@ -1363,11 +1363,19 @@ await wait(300);
       boar.body.vel = [0,0,0];
       p.body.pos = [x + 0.5, y, z + 0.3];
       p.body.vel = [0,0,0];
-      p.yaw=0;p.pitch=-0.27;
-      await sleep(200);
-      G.use();
+      // Aim at the center of the actual boar hitbox, not a hard-coded
+      // camera pitch that can pass over a 0.9-block-tall animal.
+      const eye = p.eye();
+      const center = [boar.body.pos[0], boar.body.pos[1] + boar.spec.height * 0.45, boar.body.pos[2]];
+      const [dx,dy,dz] = center.map((v,i)=>v-eye[i]);
+      p.yaw=Math.atan2(-dx,-dz);
+      p.pitch=Math.atan2(dy,Math.hypot(dx,dz));
+      await sleep(100);
+      const aim=G.entities.raycastMob(p.eye(),p.lookDir(),3.5);
+      out.nameAim={target:aim?.mob.spec.kind??null,dist:aim?.dist??null,pitch:p.pitch,alive:boar.dead===false};
+      if(aim?.mob===boar) G.use();
       await sleep(300);
-      box=document.querySelector('#ask-text input');
+      box=document.querySelector('#ask-text.show input');
     }
     out.nameDialogOpened=!!box;
     if (box) {
