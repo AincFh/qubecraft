@@ -1353,13 +1353,28 @@ await wait(300);
     await sleep(200);
     G.use(); await sleep(100);
     out.tied = Array.isArray(boar.leash);
-    p.body.pos = [boar.body.pos[0], y, boar.body.pos[2] + 2]; p.yaw = 0; p.pitch = -0.3;
+    // Lead/fence placement may leave the boar on an awkward target ray.
+    // Reset test *positions* on the clear floor and use the real name-tag
+    // interaction/prompt; never write customName or consume the tag directly.
     p.inv.slots[0] = { id: It.name_tag, count: 1 };
-    await sleep(200);
-    G.use(); await sleep(300);
-    const box = document.querySelector('#ask-text input');
-    if (box) { box.value = 'Truffle'; document.querySelector('#ask-text .btn.primary').click(); }
-    await sleep(200);
+    let box = null;
+    for(let attempt=0;attempt<3&&!box;attempt++){
+      boar.body.pos = [x + 0.5, y, z - 2.1];
+      boar.body.vel = [0,0,0];
+      p.body.pos = [x + 0.5, y, z + 0.3];
+      p.body.vel = [0,0,0];
+      p.yaw=0;p.pitch=-0.27;
+      await sleep(200);
+      G.use();
+      await sleep(300);
+      box=document.querySelector('#ask-text input');
+    }
+    out.nameDialogOpened=!!box;
+    if (box) {
+      box.value = 'Truffle';
+      document.querySelector('#ask-text .btn.primary').click();
+    }
+    await sleep(250);
     out.named = boar.customName === 'Truffle' && !p.inv.slots[0];
     return out;
   });
