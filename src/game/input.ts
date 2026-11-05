@@ -164,7 +164,21 @@ export class Input {
       return;
     }
     if (g.menus.current) {
-      if (code === 'Escape' && g.menus.current === 'pause') { g.menus.show(null); this.lockPointer(); }
+      if (code === 'Escape' && !e.repeat && g.menus.current === 'pause') {
+        e.preventDefault();
+        g.menus.show(null);
+        this.lockPointer();
+      }
+      return;
+    }
+    // Escape should pause when the browser denies pointer lock (including
+    // accessibility, testing and touch-mode desktop sessions). Previously it
+    // relied only on pointerlockchange, making keyboard pause impossible there.
+    // The menu releases pointer lock itself; the change handler sees the open
+    // pause menu and does not create a second pause transition.
+    if (code === 'Escape') {
+      e.preventDefault();
+      if (!e.repeat) g.menus.show('pause');
       return;
     }
     if (this.isKey('command', code) || this.isKey('chat', code)) {

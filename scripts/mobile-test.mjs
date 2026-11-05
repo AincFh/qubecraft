@@ -166,6 +166,16 @@ await p.tap('#pause >> text=Back to game');
 await wait(300);
 check('resume returns to the game without pointer lock', await g(() => window.blockhaven.menus.current === null && document.querySelector('#touch').classList.contains('show')));
 
+// Hardware-keyboard Escape also works in touch mode without pointer lock.
+// Previously the touch button worked but Escape silently did nothing.
+await p.keyboard.press('Escape');
+await wait(250);
+check('Escape opens pause without pointer lock', await g(() => window.blockhaven.menus.current === 'pause'));
+await p.keyboard.press('Escape');
+await wait(250);
+check('Escape closes pause and resumes controls', await g(() => window.blockhaven.menus.current === null && document.querySelector('#touch').classList.contains('show')));
+
+
 // Commands button and /speed.
 await tapHold('[data-a=chat]', 80);
 await wait(300);
