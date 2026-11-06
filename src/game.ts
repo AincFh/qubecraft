@@ -254,6 +254,14 @@ export class Game {
         return d[0].toUpperCase() + d.slice(1);
       },
       progress: () => this.progress(),
+      isBlueprintCreative: () => this.player.creative && !(this.net && 'guest' in this.net),
+      placeBlueprint: (id, turn) => {
+        const dir=['north','east','south','west'][turn];
+        this.runCommand('/blueprint build '+id+' '+dir);
+        // The in-game command handles collision checks; chat displays failures.
+        this.menus.show(null);
+        this.input.lockPointer();
+      },
       resume: () => { this.menus.show(null); this.input.lockPointer(); },
       saveAndQuit: () => this.quitToTitle(),
       respawn: () => this.respawn(),
@@ -1096,7 +1104,7 @@ export class Game {
       return;
     }
 
-    const paused = this.menus.current === 'pause' || this.menus.current === 'settings' || this.menus.current === 'controls';
+    const paused = this.menus.current === 'pause' || this.menus.current === 'settings' || this.menus.current === 'controls' || this.menus.current === 'blueprints';
     if (!paused) {
       this.acc += dt;
       while (this.acc >= TICK) {
