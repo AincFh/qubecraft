@@ -61,6 +61,14 @@ All taken in-game at render distance 16 with the default Fancy graphics.
 | ![The Ember Cathedral: a nave of burning stained glass, pews and a red runner to the altar](docs/screenshots/cathedral.jpg) | ![The Sky Garden: a glass dome of blossom trees on a floating island in the Hollow](docs/screenshots/garden.jpg) |
 | ![The Astral Spires: slender towers joined by a bridge in the Hollow](docs/screenshots/spires.jpg) | ![The Star Forge: obsidian pillars around a lava crucible under a burning star core](docs/screenshots/starforge.jpg) |
 
+## Original Creative Blueprint Library (AincFh fork)
+
+In the pause menu choose **Creative Blueprint Library** to inspect four brand-new, fully editable voxel buildings — **Riverside Cabin**, **Botanical Glasshouse**, **Frontier Watchtower** and **Village Market Stall**. Every structure is generated in code using QubeCraft's own block palette, with real interiors, greenhouses, ladders, walls, roofs and furnishings. Select a compass direction, review the exact materials, and build approximately eleven blocks ahead of your player. On mobile, the same pause menu presents a one-column accessible layout.
+
+The library is **available only to the host in Creative mode**. It is not a survival shortcut: Survival mode can inspect plans but never spawn free buildings. The whole chosen region, including the structure's hollow interior, is checked in advance for already-built structures, trees, unloaded chunks and vertical bounds. Refused placements leave the world unchanged; successful placement uses the existing world mutator and undo history. Use **`/undo`** to restore the affected terrain. Edits are real world blocks and persist through the existing autosave and world backup.
+
+The same feature can be invoked from chat: `/blueprint list`, `/blueprint info cabin`, `/blueprint build glasshouse east`, with alias `/bp`. Multiplayer guests cannot invoke host-only construction commands. Automated tests validate the four models at all four rotations, collision safety, valid block IDs and material quantities.
+
 ## Features
 
 **World**
