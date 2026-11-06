@@ -3,6 +3,7 @@
 import type { Difficulty } from '../player';
 import { deleteWorld, download, duplicateWorld, exportWorld, importWorld, listWorlds, renameWorld, type WorldMeta } from '../storage';
 import { BINDABLE, DEFAULT_KEYS, keyName } from '../game/input';
+import {BLUEPRINT_NAMES,BLUEPRINT_INFO,blueprintPlan,type BlueprintId,type CompassTurn} from '../game/blueprints';
 
 export interface Settings {
   renderDistance: number;
@@ -88,6 +89,8 @@ export interface MenuCallbacks {
   respawn(): void;
   settingsChanged(s: Settings): void;
   exportCurrent(): void;
+  isBlueprintCreative(): boolean;
+  placeBlueprint(id: BlueprintId, turn: CompassTurn): void;
 }
 
 export class Menus {
@@ -102,6 +105,7 @@ export class Menus {
     this.buildCreate();
     this.buildPause();
     this.buildProgress();
+    this.buildBlueprints();
     this.buildSettings();
     this.buildControls();
     this.buildDeath();
@@ -141,6 +145,7 @@ export class Menus {
     if (id === 'controls') this.renderControls();
     if (id === 'pause') { const d = this.screens.get('pause')!.querySelector<HTMLElement>('[data-difficulty]'); if (d) d.textContent = `Difficulty: ${this.cb.difficulty()}`; }
     if (id === 'progress') this.renderProgress();
+    if (id === 'blueprints') this.renderBlueprints();
     if (id) this.onShow(id);
     const first = id ? this.screens.get(id)?.querySelector<HTMLElement>('button, input') : null;
     first?.focus({ preventScroll: true });
@@ -305,11 +310,12 @@ export class Menus {
       button('Back to game', 'primary', () => this.cb.resume()),
       button('Invite a friend', '', () => this.show('invite')),
       button('Achievements and stats', '', () => this.show('progress')),
+      button('Creative Blueprint Library', '', () => this.show('blueprints')),
       button('Settings', '', () => { this.settingsBack = 'pause'; this.show('settings'); }),
       button('Export a backup', '', () => this.cb.exportCurrent()),
       button('Save and quit to title', '', () => this.cb.saveAndQuit()),
     );
-    const [invite, , , backup, quit] = [...p.querySelectorAll('button')].slice(1);
+    const [invite, , , , backup, quit] = [...p.querySelectorAll('button')].slice(1);
     invite.dataset.hostOnly = ''; backup.dataset.hostOnly = ''; quit.dataset.quit = '';
     // Difficulty, stepped through with each click.
     const diff = button('Difficulty', '', () => { diff.textContent = `Difficulty: ${this.cb.difficulty(true)}`; });
@@ -317,6 +323,54 @@ export class Menus {
     diff.dataset.difficulty = '';
     p.insertBefore(diff, backup);
     s.appendChild(p);
+  }
+
+  /** Four original, compiled voxel structures. No external asset downloading. */
+  private buildBlueprints():void{
+    const s=this.screen('blueprints');
+    s.appendChild(el('div',{class:'panel blueprint-library stack'}));
+  }
+
+  private renderBlueprints():void{
+    const p=this.screens.get('blueprints')!.querySelector('.blueprint-library')!;
+    p.innerHTML='';
+    const title=el('h2',{},'Creative Blueprint Library');
+    const intro=el('p',{class:'hint'},'Construct complete voxel structures from built-in templates. Each building has real blocks, functional interior space and an undoable placement. Only works in Creative mode and never overwrites existing structures.');
+    const creative=this.cb.isBlueprintCreative();
+    const note=el('p',{class:'hint'},creative?
+      'Creative mode active · check the material preview, select direction and build about 11 blocks ahead.':
+      'Blueprints can be inspected in Survival. Switch to Creative before placing blocks.');
+    const turnRow=el('div',{class:'blueprint-direction'});
+    turnRow.appendChild(el('label',{for:'blueprint-turn'},'Facing'));
+    const select=el('select',{id:'blueprint-turn','aria-label':'Blueprint direction'});
+    for(const [i,name] of ['North','East','South','West'].entries()){
+      const option=el('option',{value:String(i)},name);
+      select.appendChild(option);
+    }
+    turnRow.appendChild(select);
+    p.append(title,intro,note,turnRow);
+    const cards=el('div',{class:'blueprint-grid'});
+    for(const id of BLUEPRINT_NAMES){
+      const info=BLUEPRINT_INFO[id];
+      const plan=blueprintPlan(id);
+      const card=el('article',{class:'blueprint-card','data-blueprint':id});
+      card.appendChild(el('small',{},'CREATIVE STRUCTURE · '+plan.voxels.length+' BLOCKS'));
+      card.appendChild(el('h3',{},info.title));
+      card.appendChild(el('p',{},info.description));
+      card.appendChild(el('div',{class:'blueprint-size'},'Footprint '+info.size[0]+' × '+info.size[1]+' · Height '+info.size[2]));
+      const main=Object.entries(plan.materials).sort((a,b)=>b[1]-a[1]).slice(0,6);
+      card.appendChild(el('p',{class:'blueprint-materials'},main.map(([k,n])=>k.replaceAll('_',' ')+' ×'+n).join(' · ')));
+      const actions=el('div',{class:'blueprint-actions'});
+      const build=button('Build '+info.title,'primary',()=>{
+        this.cb.placeBlueprint(id,Number(select.value) as CompassTurn);
+      });
+      build.disabled=!creative;
+      build.dataset.buildBlueprint=id;
+      actions.appendChild(build);
+      card.appendChild(actions);
+      cards.appendChild(card);
+    }
+    p.append(cards,button('Back to pause menu','',()=>this.show('pause')));
   }
 
   private buildProgress(): void {

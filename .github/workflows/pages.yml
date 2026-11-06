@@ -59,6 +59,8 @@ jobs:
           npx --yes wait-on http://localhost:5199/ --timeout 60000
       - name: Playtest
         run: SOFTWARE_GL=1 NORENDER=1 npm run playtest
+      - name: Creative Blueprint Library — actual voxel construction and undo in Chromium
+        run: SOFTWARE_GL=1 NORENDER=1 node scripts/blueprint-test.mjs
       - name: Phone controls
         run: SOFTWARE_GL=1 NORENDER=1 npm run test:mobile
       - name: Two players

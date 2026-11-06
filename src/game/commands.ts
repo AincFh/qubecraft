@@ -9,6 +9,7 @@ import { STRUCTURES, nearestStructure, structureByName } from '../world/structur
 import { STRUCTURE_KINDS, type Dim, type StructureKind } from '../world/structure-kinds';
 import { nearestVillage } from '../world/villages';
 import type { Game } from '../game';
+import {BLUEPRINT_NAMES,BLUEPRINT_INFO,blueprintPlan,blueprintPreflight,isBlueprintId,type CompassTurn} from './blueprints';
 
 const DIM_NAMES: Record<Dim, string> = { overworld: 'the Overworld', ember: 'the Emberdeep', hollow: 'the Hollow' };
 /** Structures that sit on the ground: /locate gives just their x and z. */
@@ -271,6 +272,70 @@ export const COMMANDS: Command[] = [
         n++;
       }
       g.chat.say(`Changed ${n} blocks. /undo reverts it.`);
+    },
+  },
+  {
+    name:'blueprint',aliases:['bp'],
+    usage:'/blueprint list | info <name> | build <name> [north|east|south|west]',
+    help:'Preview or construct an original Creative-mode structure. /undo removes the entire build',
+    complete:(i,g,a)=>i===0?['list','info','build']:i===1?[...BLUEPRINT_NAMES]:
+      i===2&&a[0]==='build'?['north','east','south','west']:[],
+    run(g,a){
+      const mode=a[0]?.toLowerCase(),name=a[1]?.toLowerCase()||'';
+      if(!mode||mode==='list'){
+        g.chat.say('Creative blueprint library: '+BLUEPRINT_NAMES.map(n=>n+' ('+
+          BLUEPRINT_INFO[n].size.join('×')+')').join('; ')+
+          '. /blueprint info cabin; /blueprint build cabin north. All builds are undoable.');
+        return;
+      }
+      if(!isBlueprintId(name)||!['info','build'].includes(mode)){
+        g.chat.say('Usage: '+this.usage);return;
+      }
+      const dirNames=['north','east','south','west'] as const;
+      let rotation:CompassTurn=0;
+      if(a[2]){
+        const index=dirNames.indexOf(a[2].toLowerCase() as typeof dirNames[number]);
+        if(index<0){g.chat.say('Choose a direction: north, east, south or west.');return}
+        rotation=index as CompassTurn;
+      }
+      const plan=blueprintPlan(name,rotation);
+      if(mode==='info'){
+        const materials=Object.entries(plan.materials).sort((a,b)=>b[1]-a[1]);
+        g.chat.say(plan.title+' — '+plan.description+
+          '. Size '+plan.size.join('×')+', '+plan.voxels.length+' blocks. Materials: '+
+          materials.map(([k,n])=>k+' ×'+n).join(', '));
+        return;
+      }
+      // Hosts in shared worlds pass the global command allowlist, and creative
+      // mode is additionally mandatory: survival resource collection cannot be bypassed.
+      if(!g.player.creative){g.chat.say('Blueprint building is available only in Creative mode.');return}
+      const w=g.world;
+      if(!w){g.chat.say('Start a world before constructing blueprints.');return}
+      const p=g.player.body.pos,dir=g.player.lookDir();
+      if(!a[2]){
+        rotation=(Math.abs(dir[0])>Math.abs(dir[2])?
+          (dir[0]>0?1:3):(dir[2]>0?2:0)) as CompassTurn;
+      }
+      const final=rotation===plan.turn?plan:blueprintPlan(name,rotation);
+      const origin={x:Math.floor(p[0]+dir[0]*11),y:Math.floor(p[1])-1,
+        z:Math.floor(p[2]+dir[2]*11)};
+      const terrain=new Set([B.grass,B.dirt,B.stone,B.sand,B.gravel,B.snowy_grass,
+        B.dirt_path,B.moss_block,B.loam,B.snow_layer]);
+      const plants=new Set(Object.values(B).filter(id=>BLOCKS[id]?.replaceable));
+      const check=blueprintPreflight(final,origin,w,terrain,plants);
+      if(!check.ok){g.chat.say('Blueprint not placed: '+check.reason);return}
+      const mutations:{x:number;y:number;z:number;id:number;meta:number}[]=[];
+      for(const v of final.voxels){
+        const id=B[v.key],meta=v.meta??0;
+        if(id===undefined){g.chat.say('Blueprint palette missing '+v.key);return}
+        const x=origin.x+v.x,y=origin.y+v.y,z=origin.z+v.z;
+        if(w.getBlock(x,y,z)!==id||w.getMeta(x,y,z)!==meta)mutations.push({x,y,z,id,meta});
+      }
+      if(!mutations.length){g.chat.say('Blueprint already matches the existing blocks.');return}
+      g.history.begin();
+      for(const b of mutations)g.history.set(b.x,b.y,b.z,b.id,b.meta);
+      g.chat.say('Built '+final.title+': '+mutations.length+' real blocks at '+
+        [origin.x,origin.y,origin.z].join(', ')+'. /undo restores the previous terrain.');
     },
   },
   {
