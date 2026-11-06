@@ -278,7 +278,7 @@ export const COMMANDS: Command[] = [
     name:'blueprint',aliases:['bp'],
     usage:'/blueprint list | info <name> | build <name> [north|east|south|west]',
     help:'Preview or construct an original Creative-mode structure. /undo removes the entire build',
-    complete:(i,g,a)=>i===0?['list','info','build']:i===1?BLUEPRINT_NAMES:
+    complete:(i,g,a)=>i===0?['list','info','build']:i===1?[...BLUEPRINT_NAMES]:
       i===2&&a[0]==='build'?['north','east','south','west']:[],
     run(g,a){
       const mode=a[0]?.toLowerCase(),name=a[1]?.toLowerCase()||'';
