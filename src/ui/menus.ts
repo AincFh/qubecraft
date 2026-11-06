@@ -315,7 +315,7 @@ export class Menus {
       button('Export a backup', '', () => this.cb.exportCurrent()),
       button('Save and quit to title', '', () => this.cb.saveAndQuit()),
     );
-    const [invite, , , backup, quit] = [...p.querySelectorAll('button')].slice(1);
+    const [invite, , , , backup, quit] = [...p.querySelectorAll('button')].slice(1);
     invite.dataset.hostOnly = ''; backup.dataset.hostOnly = ''; quit.dataset.quit = '';
     // Difficulty, stepped through with each click.
     const diff = button('Difficulty', '', () => { diff.textContent = `Difficulty: ${this.cb.difficulty(true)}`; });
