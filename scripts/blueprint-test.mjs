@@ -4,6 +4,8 @@
  * Runs on a disposable new world (NORENDER in CI).
  */
 import {chromium} from 'playwright';
+import {mkdirSync} from 'node:fs';
+mkdirSync('test-results',{recursive:true});
 
 const url=(process.argv[2]||'http://localhost:5199/')+(process.env.NORENDER?'?norender':'');
 const browser=await chromium.launch({args:process.env.SOFTWARE_GL?
@@ -20,7 +22,7 @@ try{
  await page.goto(url,{waitUntil:'domcontentloaded'});
  await page.waitForTimeout(1800);
  await page.evaluate(()=>window.blockhaven.createWorld('Blueprint acceptance','blueprint-2026-11-06','creative'));
- await page.waitForFunction(()=>window.blockhaven?.mode==='playing',{timeout:120000});
+ await page.waitForFunction(()=>window.blockhaven?.mode==='playing',null,{timeout:120000});
  await page.waitForTimeout(2000);
  const before=await page.evaluate(()=>{
   const g=window.blockhaven,p=g.player,w=g.world;
