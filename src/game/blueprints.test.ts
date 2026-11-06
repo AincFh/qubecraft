@@ -2,7 +2,7 @@ import {describe,it,expect} from 'vitest';
 import {B} from '../blocks';
 import {
  BLUEPRINT_NAMES,BLUEPRINT_INFO,blueprintPlan,blueprintBounds,
- blueprintPreflight,isBlueprintId,type BlueprintLocation,type BlueprintPlan
+ blueprintPreflight,isBlueprintId,type BlueprintLocation
 } from './blueprints';
 
 const location:BlueprintLocation={x:128,y:70,z:-64};
@@ -107,7 +107,7 @@ describe('Creative voxel construction, no asset files or runtime randomness',()=
  });
  it('natural grass foundations and small replaceable plants are permitted',()=>{
   const p=blueprintPlan('glasshouse');
-  const natural=fake((x,y,z)=>y===location.y?B.grass:y===location.y+3&&x===location.x?B.tall_grass:0);
+  const natural=fake((x,y,_z)=>y===location.y?B.grass:y===location.y+3&&x===location.x?B.tall_grass:0);
   expect(blueprintPreflight(p,location,natural,surface,replaceable).ok).toBe(true);
  });
 });
