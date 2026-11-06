@@ -105,7 +105,7 @@ function market():PalettePlan{
  }
  for(const x of [0,8])for(const z of [0,6])for(let y=2;y<=5;y++)set(x,y,z,'log');
  for(let x=0;x<9;x++)for(let z=0;z<7;z++){
-   set(x,6,z,(x+z)%4<2?'red_wool':'white_wool');
+   set(x,6,z,(x+z)%4<2?'wool_red':'wool');
  }
  for(let x=1;x<=7;x++)for(const z of [1,5])set(x,2,z,'planks');
  for(const x of [1,7])for(const z of [1,5])set(x,3,z,'hay_bale');
@@ -146,12 +146,11 @@ export function blueprintBounds(plan:BlueprintPlan,at:BlueprintLocation){
 }
 export function blueprintPreflight(plan:BlueprintPlan,at:BlueprintLocation,
  world:BlueprintWorldReader,permittedSurface:ReadonlySet<number>,replaceable:ReadonlySet<number>):
- {ok:true;changes:number}|{ok:false;reason:string}{
+ {ok:true;placements:number}|{ok:false;reason:string}{
  if(![at.x,at.y,at.z].every(Number.isSafeInteger))return {ok:false,reason:'Invalid coordinates'};
  const b=blueprintBounds(plan,at);
  if(b.minY<0||b.maxY>=256)return {ok:false,reason:'Blueprint exceeds the buildable vertical range'};
  if(plan.voxels.length>2500)return {ok:false,reason:'Blueprint exceeds the 2500-block limit'};
- let changes=0;
  // Validate the ENTIRE volume, not just the blocks the structure places.
  // This catches existing buildings in the interior before any mutation.
  for(let x=b.minX;x<=b.maxX;x++)for(let z=b.minZ;z<=b.maxZ;z++){
@@ -165,6 +164,5 @@ export function blueprintPreflight(plan:BlueprintPlan,at:BlueprintLocation,
     return {ok:false,reason:'An existing structure or tree occupies the build volume'};
   }
  }
- for(const v of plan.voxels)if(world.getBlock(at.x+v.x,at.y+v.y,at.z+v.z)!==-1)changes++;
- return {ok:true,changes};
+ return {ok:true,placements:plan.voxels.length};
 }
