@@ -457,3 +457,30 @@ label.check { display: flex; align-items: center; gap: 8px; color: var(--bone-di
 .anvil-cost { margin: 0; font-size: 14px; color: #9ad07a; min-height: 1.2em; }
 .anvil-cost.bad { color: #d98a7a; }
 .furnace-title { margin: 0 12px 0 0; }
+
+
+/* ---------- Creative construction blueprints ---------- */
+.blueprint-library{width:min(860px,calc(100vw - 24px));max-height:min(94dvh,850px);display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.blueprint-library h2{font-weight:700;letter-spacing:.01em}
+.blueprint-library>.hint{line-height:1.55;margin:0;font-size:13px;max-width:700px}
+.blueprint-direction{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid #78654870;padding:10px 12px;background:#281d17}
+.blueprint-direction label{font-size:14px;color:var(--bone);font-weight:600}
+.blueprint-direction select{margin-left:auto;color:var(--bone);background:#1e1610;border:2px solid #8d7357;padding:8px 13px;min-width:140px;font:inherit;font-size:13px}
+.blueprint-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.blueprint-card{padding:17px;border:2px solid #776047;background:linear-gradient(135deg,#30271c,#191712);display:flex;flex-direction:column;gap:8px;min-width:0}
+.blueprint-card>small{font-size:10px;letter-spacing:.12em;color:var(--lantern);font-weight:700}
+.blueprint-card h3{font-size:19px;color:#f4ddaf;margin:1px 0}
+.blueprint-card p{font-size:12px;color:var(--bone-dim);line-height:1.55;margin:0}
+.blueprint-size{font:700 12px ui-monospace,Consolas,monospace;color:#c4a881;border-bottom:1px solid #8e785e42;padding:6px 0}
+.blueprint-card .blueprint-materials{font-size:11px;line-height:1.5;min-height:45px}
+.blueprint-actions{margin-top:auto}
+.blueprint-actions button{width:100%;min-height:43px;white-space:normal;line-height:1.4}
+.blueprint-actions button:disabled{opacity:.5;cursor:not-allowed}
+.blueprint-library :is(button,select):focus-visible{outline:2px solid var(--lantern);outline-offset:3px}
+@media(max-width:600px){
+ .blueprint-library{padding:15px;gap:11px}
+ .blueprint-grid{grid-template-columns:1fr}
+ .blueprint-card{padding:13px}
+ .blueprint-card .blueprint-materials{min-height:0}
+ .blueprint-direction select{min-width:110px}
+}
